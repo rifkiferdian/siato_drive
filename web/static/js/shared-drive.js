@@ -11,12 +11,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!response.ok) throw new Error(data.error || "Operasi gagal");
     return data;
   };
-  const showError = (message) => Swal.fire({ icon: "error", title: "Operasi gagal", text: message, confirmButtonText: "Tutup", confirmButtonColor: "#2563eb" });
+  const showError = (message) => Swal.fire({ icon: "error", title: "Operasi gagal", text: message, confirmButtonText: "Tutup", confirmButtonColor: "#7c3aed" });
   const showSuccess = (title, text = "") => Swal.fire({ icon: "success", title, text, timer: 1300, timerProgressBar: true, showConfirmButton: false });
   const showToast = (title, icon = "success") => Swal.fire({ toast: true, position: "top-end", icon, title, timer: 1800, timerProgressBar: true, showConfirmButton: false });
 
   document.querySelector("[data-open-folder]")?.addEventListener("click", async () => {
-    const result = await Swal.fire({ title: "Buat folder baru", text: "Folder akan dibuat di lokasi yang sedang dibuka.", input: "text", inputLabel: "Nama folder", inputPlaceholder: "Contoh: Dokumen Akademik", showCancelButton: true, confirmButtonText: "Buat Folder", cancelButtonText: "Batal", confirmButtonColor: "#2563eb", inputValidator: (value) => !value.trim() ? "Nama folder wajib diisi" : undefined });
+    const result = await Swal.fire({ title: "Buat folder baru", text: "Folder akan dibuat di lokasi yang sedang dibuka.", input: "text", inputLabel: "Nama folder", inputPlaceholder: "Contoh: Dokumen Akademik", showCancelButton: true, confirmButtonText: "Buat Folder", cancelButtonText: "Batal", confirmButtonColor: "#7c3aed", inputValidator: (value) => !value.trim() ? "Nama folder wajib diisi" : undefined });
     if (!result.isConfirmed) return;
     const body = new FormData(); body.set("name", result.value.trim()); body.set("parent_id", parent);
     try { await post("/api/v1/shared-drive/folders", body); await showSuccess("Folder berhasil dibuat"); location.reload(); } catch (error) { await showError(error.message); }

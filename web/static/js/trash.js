@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  const dashboardLink = document.querySelector(".workspace-topbar .back-dashboard");
+  if (dashboardLink) dashboardLink.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg><span>Dashboard</span>`;
   let Swal;
   try { Swal = await loadSweetAlert(); } catch (error) { console.error(error); return; }
 
@@ -10,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!response.ok) throw new Error(data.error || "Operasi gagal");
     return data;
   };
-  const fail = (message) => Swal.fire({ icon: "error", title: "Operasi gagal", text: message, confirmButtonText: "Tutup", confirmButtonColor: "#2563eb" });
+  const fail = (message) => Swal.fire({ icon: "error", title: "Operasi gagal", text: message, confirmButtonText: "Tutup", confirmButtonColor: "#7c3aed" });
   const selectAll = document.querySelector("[data-select-all]");
   const restoreSelected = document.querySelector("[data-restore-selected]");
   const deleteSelected = document.querySelector("[data-delete-selected]");
@@ -36,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   restoreSelected?.addEventListener("click", async () => {
     const items = selectedItems();
     if (!items.length) return;
-    const result = await Swal.fire({ icon: "question", title: `Pulihkan ${items.length} item?`, text: "Semua item yang dipilih akan dikembalikan ke lokasi sebelumnya.", showCancelButton: true, confirmButtonText: "Pulihkan yang Dipilih", cancelButtonText: "Batal", confirmButtonColor: "#2563eb", reverseButtons: true });
+    const result = await Swal.fire({ icon: "question", title: `Pulihkan ${items.length} item?`, text: "Semua item yang dipilih akan dikembalikan ke lokasi sebelumnya.", showCancelButton: true, confirmButtonText: "Pulihkan yang Dipilih", cancelButtonText: "Batal", confirmButtonColor: "#7c3aed", reverseButtons: true });
     if (!result.isConfirmed) return;
     restoreSelected.disabled = true;
     deleteSelected.disabled = true;
@@ -46,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       try { await post(`/api/v1/trash/nodes/${item.dataset.nodeId}/restore`); removeItem(item, false); restored += 1; }
       catch (error) { failures.push(`${item.dataset.nodeName}: ${error.message}`); }
     }
-    if (failures.length) await Swal.fire({ icon: "warning", title: `${restored} item berhasil dipulihkan`, text: `${failures.length} item gagal dipulihkan. ${failures[0]}`, confirmButtonColor: "#2563eb" });
+    if (failures.length) await Swal.fire({ icon: "warning", title: `${restored} item berhasil dipulihkan`, text: `${failures.length} item gagal dipulihkan. ${failures[0]}`, confirmButtonColor: "#7c3aed" });
     else await Swal.fire({ icon: "success", title: `${restored} item berhasil dipulihkan`, timer: 1500, showConfirmButton: false });
     if (restored === items.length && itemChecks().length === items.length) location.reload(); else updateSelection();
   });
@@ -63,14 +65,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       try { await post(`/api/v1/trash/nodes/${item.dataset.nodeId}/permanent-delete`); removeItem(item, false); deleted += 1; }
       catch (error) { failures.push(`${item.dataset.nodeName}: ${error.message}`); }
     }
-    if (failures.length) await Swal.fire({ icon: "warning", title: `${deleted} item berhasil dihapus`, text: `${failures.length} item gagal dihapus. ${failures[0]}`, confirmButtonColor: "#2563eb" });
+    if (failures.length) await Swal.fire({ icon: "warning", title: `${deleted} item berhasil dihapus`, text: `${failures.length} item gagal dihapus. ${failures[0]}`, confirmButtonColor: "#7c3aed" });
     else await Swal.fire({ icon: "success", title: `${deleted} item dihapus permanen`, timer: 1500, showConfirmButton: false });
     if (deleted === items.length && itemChecks().length === items.length) location.reload(); else updateSelection();
   });
 
   document.querySelectorAll("[data-restore]").forEach((button) => button.addEventListener("click", async () => {
     const item = button.closest("[data-trash-item]");
-    const result = await Swal.fire({ icon: "question", title: "Pulihkan item?", html: `<strong>${escapeHTML(item.dataset.nodeName)}</strong> akan dikembalikan ke lokasi sebelumnya.`, showCancelButton: true, confirmButtonText: "Pulihkan", cancelButtonText: "Batal", confirmButtonColor: "#2563eb", reverseButtons: true });
+    const result = await Swal.fire({ icon: "question", title: "Pulihkan item?", html: `<strong>${escapeHTML(item.dataset.nodeName)}</strong> akan dikembalikan ke lokasi sebelumnya.`, showCancelButton: true, confirmButtonText: "Pulihkan", cancelButtonText: "Batal", confirmButtonColor: "#7c3aed", reverseButtons: true });
     if (!result.isConfirmed) return;
     try { await post(`/api/v1/trash/nodes/${item.dataset.nodeId}/restore`); removeItem(item); await Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Item berhasil dipulihkan", timer: 1800, showConfirmButton: false }); } catch (error) { await fail(error.message); }
   }));

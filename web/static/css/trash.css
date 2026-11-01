@@ -3,3 +3,12 @@
 @media(max-width:650px){.trash-search{display:none}.trash-heading span{display:block;line-height:1.5}.trash-filter{align-items:flex-end;flex-wrap:wrap}.trash-filter>span{width:100%;margin:0}.trash-bulkbar{flex-wrap:wrap}.trash-bulkbar button{width:100%;justify-content:center}.trash-item{grid-template-columns:auto auto minmax(0,1fr)}.trash-source,.trash-item time{grid-column:3}.trash-actions{grid-column:1/-1;grid-row:auto;justify-content:flex-end}.restore-button{flex:1}.trash-panel{border-radius:13px}}
 .bulk-actions{display:flex;align-items:center;gap:.5rem;margin-left:auto}.trash-bulkbar .bulk-actions button{width:auto;margin-left:0}.trash-bulkbar .bulk-restore{background:#2563eb}.trash-bulkbar .bulk-delete{background:#dc2626}
 @media(max-width:650px){.bulk-actions{width:100%;margin-left:0}.trash-bulkbar .bulk-actions button{flex:1;justify-content:center}}
+
+/* Purple application theme */
+.trash-heading p{color:#7c3aed}.trash-bulkbar{border-color:#ddd6fe;background:#faf5ff}.trash-bulkbar input,.trash-check input{accent-color:#7c3aed}.trash-item:has([data-item-check]:checked){background:#f5f3ff}.trash-file-icon.folder{color:#7c3aed;background:#f5f3ff}.drive-badge{color:#6d28d9;background:#f5f3ff}.restore-button{color:#6d28d9;background:#f5f3ff}.restore-button:hover{background:#ede9fe}.trash-bulkbar .bulk-restore{background:#7c3aed}
+
+/* Balanced trash page header */
+.trash-search{flex:1;width:auto;max-width:680px;margin-left:0}.trash-search input{height:44px;border-color:#e2e8f0;background:#f8fafc;transition:border-color .16s,box-shadow .16s,background .16s}.trash-search input:focus{outline:0;border-color:#a78bfa;background:#fff;box-shadow:0 0 0 4px #ede9fe}.workspace-topbar .back-dashboard{height:40px;display:flex;align-items:center;gap:.48rem;margin-left:auto;padding:0 .75rem;border:1px solid #ddd6fe;border-radius:10px;color:#6d28d9;background:#f5f3ff;font-size:.75rem;font-weight:750;transition:background .16s,border-color .16s,transform .16s}.workspace-topbar .back-dashboard:hover{border-color:#c4b5fd;background:#ede9fe;transform:translateY(-1px)}.workspace-topbar .back-dashboard svg{width:17px;fill:currentColor}
+@media(max-width:650px){.workspace-topbar .back-dashboard{width:40px;padding:0;justify-content:center}.workspace-topbar .back-dashboard span{display:none}}
+.workspace-topbar .trash-search{margin-left:0}.trash-search>svg{left:.8rem}.trash-search input{padding-left:2.55rem;border-radius:11px}
+@media(max-width:800px){.trash-search{display:none}}

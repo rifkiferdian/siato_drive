@@ -96,3 +96,6 @@
 @media(max-width:1360px){.drive-list[data-view="grid-md"]{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @media(max-width:1120px){.drive-list[data-view="grid-md"]{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:700px){.drive-list[data-view="grid-md"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}.drive-list[data-view="grid-md"] article.is-file{height:184px}.grid-file-preview{height:133px}}
+
+/* Purple application theme */
+.drive-list[data-view="grid-md"] .node-icon.folder{color:#7c3aed}.drive-list[data-view="grid-md"] .node-more-button:hover,.node-more-button[aria-expanded="true"]{color:#6d28d9!important;background:#ede9fe!important}.drive-list[data-view="details"] .node-more-button:hover,.node-action-menu button:hover{color:#6d28d9!important;background:#f5f3ff!important}.inline-rename{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}.generic-file-icon{color:#7c3aed;background:#ede9fe}.view-segmented button:focus-visible{outline-color:#7c3aed}.view-segmented button.checked{color:#5b21b6;background:#ddd6fe}.view-segmented button.checked:hover{background:#c4b5fd}
