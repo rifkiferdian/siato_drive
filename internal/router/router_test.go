@@ -48,6 +48,7 @@ func TestWorkspaceTemplatesRender(t *testing.T) {
 		{"dashboard.html", map[string]any{"Title": "Dashboard", "Session": session}},
 		{"my-drive.html", map[string]any{"Title": "Drive Saya", "Session": session, "Page": mydrive.Page{Drive: mydrive.Drive{ID: uuid.New(), Name: "Drive Saya"}, Nodes: []mydrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
 		{"public-drive-manager.html", map[string]any{"Title": "Drive Publik", "Session": session, "Page": publicdrive.ManagerPage{Drive: publicdrive.Drive{ID: uuid.New(), Name: "Drive Publik"}, Nodes: []publicdrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
+		{"public-drive-viewer.html", map[string]any{"Title": "Drive Publik", "Session": session, "Page": publicdrive.ManagerPage{Drive: publicdrive.Drive{ID: uuid.New(), Name: "Drive Publik"}, Nodes: []publicdrive.Node{}}, "Query": "", "Sort": "name"}},
 		{"shared-drive-manager.html", map[string]any{"Title": "Drive Bersama", "Session": session, "Page": shareddrive.ManagerPage{Drive: shareddrive.Drive{ID: uuid.New(), Name: "Drive Bersama"}, Nodes: []shareddrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
 		{"trash.html", map[string]any{"Title": "Sampah", "Session": session, "Items": []trash.Item{}, "Query": "", "Type": ""}},
 		{"users.html", map[string]any{"Title": "User Management", "Session": session, "Users": []usermanagement.User{}}},

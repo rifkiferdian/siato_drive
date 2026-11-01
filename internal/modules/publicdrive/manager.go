@@ -259,7 +259,11 @@ func (h *ManagerHandler) Index(c *gin.Context) {
 		c.HTML(http.StatusNotFound, "error.html", gin.H{"Title": "Drive Publik tidak ditemukan", "Message": "Anda bukan anggota organisasi ini atau drive belum tersedia."})
 		return
 	}
-	c.HTML(http.StatusOK, "public-drive-manager.html", gin.H{"Title": "Drive Publik", "Session": session, "Page": page, "Query": c.Query("q"), "Sort": c.Query("sort"), "MaxUpload": h.maxUpload})
+	templateName := "public-drive-viewer.html"
+	if session.Permissions["public_drive.write"] {
+		templateName = "public-drive-manager.html"
+	}
+	c.HTML(http.StatusOK, templateName, gin.H{"Title": "Drive Publik", "Session": session, "Page": page, "Query": c.Query("q"), "Sort": c.Query("sort"), "MaxUpload": h.maxUpload})
 }
 func (h *ManagerHandler) CreateFolder(c *gin.Context) {
 	session := managerSession(c)
