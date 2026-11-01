@@ -174,7 +174,7 @@ function setupGridPreviews(list) {
     else if (mime === "application/pdf") { preview.classList.add("pdf-preview"); preview.innerHTML = `<iframe src="${url}#page=1&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=0" title="Preview ${escapeHTML(name)}" loading="lazy" tabindex="-1" scrolling="no"></iframe><span class="preview-type-badge pdf">PDF</span>`; }
     else if (mime === "video/mp4") { preview.classList.add("video-preview"); preview.innerHTML = `<video src="${url}" preload="metadata" muted></video><span class="preview-play">▶</span>`; }
     else { preview.classList.add("generic-preview"); const extension = name.includes(".") ? name.split(".").pop().slice(0, 5).toUpperCase() : "FILE"; preview.innerHTML = `<span class="generic-file-icon">${escapeHTML(extension)}</span><small>Preview tidak tersedia</small>`; }
-    if (!preview.classList.contains("generic-preview")) { preview.tabIndex = 0; preview.setAttribute("role", "button"); preview.setAttribute("aria-label", `Buka preview ${name}`); const open = () => window.open(url, "_blank", "noopener"); preview.addEventListener("click", open); preview.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } }); }
+    if (!preview.classList.contains("generic-preview")) { preview.tabIndex = 0; preview.setAttribute("role", "button"); preview.setAttribute("aria-label", `Buka preview ${name}`); const open = (event) => { event?.preventDefault(); event?.stopPropagation(); article.querySelector(".node-main")?.click(); }; preview.addEventListener("click", open); preview.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") open(event); }); }
     article.appendChild(preview);
   });
 }
