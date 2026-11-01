@@ -8,12 +8,13 @@ import (
 	"cloud-drive/internal/modules/publicdrive"
 	"cloud-drive/internal/modules/shareddrive"
 	"cloud-drive/internal/modules/trash"
+	"cloud-drive/internal/modules/usermanagement"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"net/http"
 )
 
-func New(cfg config.Config, templates *template.Template, ah *auth.Handler, as *auth.Service, ph *publicdrive.Handler, mh *mydrive.Handler, pmh *publicdrive.ManagerHandler, smh *shareddrive.ManagerHandler, th *trash.Handler) *gin.Engine {
+func New(cfg config.Config, templates *template.Template, ah *auth.Handler, as *auth.Service, ph *publicdrive.Handler, mh *mydrive.Handler, pmh *publicdrive.ManagerHandler, smh *shareddrive.ManagerHandler, th *trash.Handler, uh *usermanagement.Handler) *gin.Engine {
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -64,6 +65,14 @@ func New(cfg config.Config, templates *template.Template, ah *auth.Handler, as *
 	secured.GET("/drive/trash", th.Index)
 	secured.POST("/api/v1/trash/nodes/:id/restore", middleware.RequireCSRF(), th.Restore)
 	secured.POST("/api/v1/trash/nodes/:id/permanent-delete", middleware.RequireCSRF(), th.PermanentDelete)
+	secured.GET("/api/v1/admin/access", uh.Access)
+	admin := secured.Group("")
+	admin.Use(middleware.RequirePermission("users.manage"))
+	admin.GET("/admin/users", uh.Index)
+	admin.POST("/api/v1/admin/users", middleware.RequireCSRF(), uh.Create)
+	admin.POST("/api/v1/admin/users/:id/status", middleware.RequireCSRF(), uh.SetActive)
+	admin.POST("/api/v1/admin/users/:id/password", middleware.RequireCSRF(), uh.ResetPassword)
+	admin.POST("/api/v1/admin/users/:id/role", middleware.RequireCSRF(), uh.SetRole)
 	return r
 }
 func placeholder(title string) gin.HandlerFunc {
