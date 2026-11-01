@@ -33,6 +33,9 @@ func New(cfg config.Config, templates *template.Template, ah *auth.Handler, as *
 	secured := r.Group("")
 	secured.Use(middleware.RequireAuth(as, cfg.CookieName))
 	secured.POST("/logout", middleware.RequireCSRF(), ah.Logout)
+	secured.GET("/profile", ah.Profile)
+	secured.POST("/api/v1/profile", middleware.RequireCSRF(), ah.UpdateProfile)
+	secured.POST("/api/v1/profile/password", middleware.RequireCSRF(), ah.ChangePassword)
 	secured.GET("/dashboard", func(c *gin.Context) {
 		s, _ := c.Get(middleware.SessionKey)
 		c.HTML(http.StatusOK, "dashboard.html", gin.H{"Title": "Dashboard", "Session": s.(auth.Session)})

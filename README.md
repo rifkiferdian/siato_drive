@@ -21,7 +21,7 @@ Node.js dan Docker tidak dibutuhkan saat runtime.
    ```
 2. Salin `.env.example` menjadi `.env`, lalu ganti credential dan secret development.
 3. Jalankan migrasi: `go run ./cmd/migrate`.
-4. Buat super admin: `go run ./cmd/seed`. Password minimal 12 karakter dan dibaca dari environment.
+4. Buat super admin: `go run ./cmd/seed`. Password minimal 6 karakter, mengandung huruf besar dan angka, serta dibaca dari environment.
 5. Jalankan server: `go run ./cmd/server`, kemudian buka `http://localhost:8080`.
 
 ### Development dengan hot reload

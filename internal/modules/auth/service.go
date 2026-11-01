@@ -11,9 +11,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/google/uuid"
 )
 
 var ErrInvalidCredentials = errors.New("email atau kata sandi salah")
+var ErrCurrentPassword = errors.New("password saat ini tidak sesuai")
+var ErrProfileInput = errors.New("nama tampilan tidak valid")
 
 type Service struct {
 	repo *Repository
@@ -51,6 +57,24 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Session, erro
 func (s *Service) Logout(ctx context.Context, token string) error {
 	return s.repo.DeleteSession(ctx, token)
 }
+func (s *Service) UpdateDisplayName(ctx context.Context, userID uuid.UUID, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" || utf8.RuneCountInString(name) > 150 {
+		return ErrProfileInput
+	}
+	return s.repo.UpdateDisplayName(ctx, userID, name)
+}
+func (s *Service) ChangePassword(ctx context.Context, session Session, current, next string) error {
+	_, hash, err := s.repo.Credentials(ctx, session.User.Email)
+	if err != nil || !verifyPassword(current, hash) {
+		return ErrCurrentPassword
+	}
+	nextHash, err := HashPassword(next)
+	if err != nil {
+		return err
+	}
+	return s.repo.UpdatePassword(ctx, session.UserID, session.ID, nextHash)
+}
 func randomToken(n int) (string, error) {
 	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
@@ -59,8 +83,13 @@ func randomToken(n int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 func HashPassword(p string) (string, error) {
-	if len(p) < 12 {
-		return "", errors.New("password minimal 12 karakter")
+	var hasUpper, hasDigit bool
+	for _, char := range p {
+		hasUpper = hasUpper || unicode.IsUpper(char)
+		hasDigit = hasDigit || unicode.IsDigit(char)
+	}
+	if utf8.RuneCountInString(p) < 6 || !hasUpper || !hasDigit {
+		return "", errors.New("password minimal 6 karakter serta wajib memiliki huruf besar dan angka")
 	}
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {

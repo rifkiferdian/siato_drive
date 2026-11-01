@@ -51,6 +51,7 @@ func TestWorkspaceTemplatesRender(t *testing.T) {
 		{"shared-drive-manager.html", map[string]any{"Title": "Drive Bersama", "Session": session, "Page": shareddrive.ManagerPage{Drive: shareddrive.Drive{ID: uuid.New(), Name: "Drive Bersama"}, Nodes: []shareddrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
 		{"trash.html", map[string]any{"Title": "Sampah", "Session": session, "Items": []trash.Item{}, "Query": "", "Type": ""}},
 		{"users.html", map[string]any{"Title": "User Management", "Session": session, "Users": []usermanagement.User{}}},
+		{"profile.html", map[string]any{"Title": "Profil Saya", "Session": session}},
 		{"public.html", map[string]any{"Title": "Publik", "Org": publicdrive.Organization{ID: uuid.New(), Slug: "default", Name: "Organisasi"}, "Nodes": []publicdrive.Node{}}},
 		{"error.html", map[string]any{"Title": "Tidak ditemukan", "Message": "Halaman tidak tersedia."}},
 	}

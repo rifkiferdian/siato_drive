@@ -49,6 +49,24 @@ func (r *Repository) DeleteSession(ctx context.Context, token string) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM auth_sessions WHERE token_hash=?`, h[:])
 	return err
 }
+func (r *Repository) UpdateDisplayName(ctx context.Context, userID uuid.UUID, name string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE auth_users SET display_name=? WHERE id=?`, name, userID.String())
+	return err
+}
+func (r *Repository) UpdatePassword(ctx context.Context, userID, currentSessionID uuid.UUID, hash string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `UPDATE auth_users SET password_hash=? WHERE id=?`, hash, userID.String()); err != nil {
+		return err
+	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM auth_sessions WHERE user_id=? AND id<>?`, userID.String(), currentSessionID.String()); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
 func (r *Repository) LogLogin(ctx context.Context, email string, userID *uuid.UUID, success bool, ip string) {
 	var id any
 	if userID != nil {

@@ -11,6 +11,27 @@ type Handler struct {
 	cfg     config.Config
 }
 
+func (h *Handler) Profile(c *gin.Context) {
+	session := c.MustGet("session").(Session)
+	c.HTML(http.StatusOK, "profile.html", gin.H{"Title": "Profil Saya", "Session": session})
+}
+func (h *Handler) UpdateProfile(c *gin.Context) {
+	session := c.MustGet("session").(Session)
+	if err := h.service.UpdateDisplayName(c.Request.Context(), session.UserID, c.PostForm("display_name")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Profil berhasil diperbarui"})
+}
+func (h *Handler) ChangePassword(c *gin.Context) {
+	session := c.MustGet("session").(Session)
+	if err := h.service.ChangePassword(c.Request.Context(), session, c.PostForm("current_password"), c.PostForm("new_password")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Password berhasil diubah"})
+}
+
 func NewHandler(s *Service, cfg config.Config) *Handler { return &Handler{service: s, cfg: cfg} }
 func (h *Handler) LoginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", gin.H{"Title": "Masuk"})
