@@ -54,13 +54,16 @@ Jika Tailwind CLI tersedia, CSS dapat dibangun dengan `tailwindcss -i assets/css
 - Login/logout, server-side session yang hanya menyimpan hash token, cookie HttpOnly/SameSite/Secure configurable, CSRF, permission middleware, dan audit login.
 - Abstraksi storage dan local private provider: streaming temporary upload, SHA-256, atomic move, serta perlindungan path traversal.
 - Portal `/public` dan `/public/:organizationSlug`: browsing, search, filter, sort, serta public download yang memvalidasi organisasi, public drive, status file/node, dan storage object.
-- Dashboard SSR responsif serta route dashboard Drive Saya/Bersama/Publik/Sampah yang diproteksi session (halaman operasi belum lengkap).
+- Dashboard SSR responsif serta route dashboard Drive Saya/Bersama/Publik/Sampah yang diproteksi session.
 - Drive Saya end-to-end: browsing folder, breadcrumb, pencarian, sorting, membuat folder, multi-upload dari UI, streaming file ke private storage, checksum SHA-256, download terproteksi, rename, dan hapus ke Sampah.
+- Drive Publik pengelola end-to-end: organisasi default, membership, folder, upload streaming, preview/download terproteksi, rename, hapus ke Sampah, serta publikasi otomatis ke portal anonim `/public` dan `/public/:organizationSlug`.
+- Drive Bersama end-to-end: Shared Drive organisasi, membership dan role drive, folder, upload streaming, preview/download, rename inline, hapus ke Sampah, pencarian, sorting, serta tampilan List/Grid untuk kolaborasi internal.
+- Sampah terintegrasi untuk Drive Saya, Drive Bersama, dan Drive Publik: pencarian/filter asal drive, restore ke lokasi semula, serta hapus permanen metadata dan objek private storage dengan konfirmasi SweetAlert2.
 - Nginx dan systemd example.
 
 ## Belum selesai
 
-Fase lanjutan masih memerlukan restore/permanent delete, preview, copy/move, favorite, ACL resource, sharing, quota/resumable upload, Drive Bersama dan Drive Publik pengelola, admin CRUD/reporting, PDF.js, malware scanner integration, login rate limiting persisten, serta integration/security test dengan MySQL terisolasi. Drive Bersama dan Drive Publik pengelola masih sengaja menampilkan status fondasi dan tidak berpura-pura melakukan operasi.
+Fase lanjutan masih memerlukan copy/move, favorite, ACL resource, sharing, quota/resumable upload, admin CRUD/reporting, PDF.js, malware scanner integration, login rate limiting persisten, pembersihan Sampah terjadwal, serta integration/security test dengan MySQL terisolasi.
 
 ## Backup dan restore
 

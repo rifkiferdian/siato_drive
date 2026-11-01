@@ -12,6 +12,8 @@ import (
 	"cloud-drive/internal/modules/auth"
 	"cloud-drive/internal/modules/mydrive"
 	"cloud-drive/internal/modules/publicdrive"
+	"cloud-drive/internal/modules/shareddrive"
+	"cloud-drive/internal/modules/trash"
 	"github.com/google/uuid"
 )
 
@@ -44,6 +46,9 @@ func TestWorkspaceTemplatesRender(t *testing.T) {
 	}{
 		{"dashboard.html", map[string]any{"Title": "Dashboard", "Session": session}},
 		{"my-drive.html", map[string]any{"Title": "Drive Saya", "Session": session, "Page": mydrive.Page{Drive: mydrive.Drive{ID: uuid.New(), Name: "Drive Saya"}, Nodes: []mydrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
+		{"public-drive-manager.html", map[string]any{"Title": "Drive Publik", "Session": session, "Page": publicdrive.ManagerPage{Drive: publicdrive.Drive{ID: uuid.New(), Name: "Drive Publik"}, Nodes: []publicdrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
+		{"shared-drive-manager.html", map[string]any{"Title": "Drive Bersama", "Session": session, "Page": shareddrive.ManagerPage{Drive: shareddrive.Drive{ID: uuid.New(), Name: "Drive Bersama"}, Nodes: []shareddrive.Node{}}, "Query": "", "Sort": "name", "MaxUpload": int64(1024)}},
+		{"trash.html", map[string]any{"Title": "Sampah", "Session": session, "Items": []trash.Item{}, "Query": "", "Type": ""}},
 		{"public.html", map[string]any{"Title": "Publik", "Org": publicdrive.Organization{ID: uuid.New(), Slug: "default", Name: "Organisasi"}, "Nodes": []publicdrive.Node{}}},
 		{"error.html", map[string]any{"Title": "Tidak ditemukan", "Message": "Halaman tidak tersedia."}},
 	}
@@ -62,14 +67,14 @@ func TestRoutesRegisterWithoutConflict(t *testing.T) {
 	tpl := template.Must(template.New("root").Parse(`{{define "login.html"}}ok{{end}}{{define "dashboard.html"}}ok{{end}}{{define "public.html"}}ok{{end}}{{define "error.html"}}ok{{end}}`))
 	cfg := config.Config{Env: "test", CookieName: "session", SessionTTL: time.Hour}
 	service := auth.NewService(nil, time.Hour)
-	_ = New(cfg, tpl, auth.NewHandler(service, cfg), service, publicdrive.NewHandler(nil, nil, "default"), mydrive.NewHandler(nil, 1024))
+	_ = New(cfg, tpl, auth.NewHandler(service, cfg), service, publicdrive.NewHandler(nil, nil, "default"), mydrive.NewHandler(nil, 1024), publicdrive.NewManagerHandler(nil, 1024), shareddrive.NewManagerHandler(nil, 1024), trash.NewHandler(nil))
 }
 
 func TestRootRedirectsToLogin(t *testing.T) {
 	tpl := template.Must(template.New("root").Parse(`{{define "login.html"}}ok{{end}}{{define "dashboard.html"}}ok{{end}}{{define "public.html"}}ok{{end}}{{define "error.html"}}ok{{end}}`))
 	cfg := config.Config{Env: "test", CookieName: "session", SessionTTL: time.Hour}
 	service := auth.NewService(nil, time.Hour)
-	app := New(cfg, tpl, auth.NewHandler(service, cfg), service, publicdrive.NewHandler(nil, nil, "default"), mydrive.NewHandler(nil, 1024))
+	app := New(cfg, tpl, auth.NewHandler(service, cfg), service, publicdrive.NewHandler(nil, nil, "default"), mydrive.NewHandler(nil, 1024), publicdrive.NewManagerHandler(nil, 1024), shareddrive.NewManagerHandler(nil, 1024), trash.NewHandler(nil))
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	app.ServeHTTP(recorder, request)

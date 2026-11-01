@@ -1,0 +1,59 @@
+{{define "trash.html"}}
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{.Session.CSRFToken}}">
+  <title>Sampah · Cloud Drive</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/workspace.css">
+  <link rel="stylesheet" href="/static/css/trash.css">
+</head>
+<body class="workspace-page">
+<div class="workspace-shell" data-workspace>
+  <div class="workspace-backdrop" data-sidebar-close></div>
+  <aside class="workspace-sidebar">
+    <div class="workspace-brand"><span class="workspace-brand-mark"><svg viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.55-8.97A6.5 6.5 0 0 1 18.5 8.5v.18A5.25 5.25 0 0 1 18.25 19H6.5Z"/></svg></span><span><strong>Cloud Drive</strong><small>File Management</small></span></div>
+    <nav class="workspace-nav">
+      <p>Workspace</p>
+      <a href="/dashboard"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z"/></svg>Beranda</a>
+      <a href="/drive/my-drive"><svg viewBox="0 0 24 24"><path d="M10 4H2v16h20V6H12l-2-2Zm10 14H4V8h16v10Z"/></svg>Drive Saya</a>
+      <a href="/drive/shared"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3a3 3 0 0 0 0 6Zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z"/></svg>Drive Bersama</a>
+      <a href="/drive/public"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.92 6h-2.95a15.7 15.7 0 0 0-1.38-3.56A8.06 8.06 0 0 1 18.92 8ZM12 4c.83 1.2 1.48 2.55 1.85 4h-3.7A13.7 13.7 0 0 1 12 4ZM4.26 14a7.8 7.8 0 0 1 0-4h3.39a16.5 16.5 0 0 0 0 4H4.26Zm5.5 0a14.4 14.4 0 0 1 0-4h4.48a14.4 14.4 0 0 1 0 4H9.76ZM12 20a13.7 13.7 0 0 1-1.85-4h3.7A13.7 13.7 0 0 1 12 20Z"/></svg>Drive Publik</a>
+      <a class="active" href="/drive/trash"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12Zm3.5-8h1.5v6H9.5v-6Zm3.5 0h1.5v6H13v-6ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg>Sampah</a>
+    </nav>
+    <div class="sidebar-footer"><div class="sidebar-user-avatar">{{slice .Session.User.DisplayName 0 1}}</div><div><strong>{{.Session.User.DisplayName}}</strong><small>{{.Session.User.Email}}</small></div></div>
+  </aside>
+  <main class="workspace-main">
+    <header class="workspace-topbar">
+      <button class="icon-button sidebar-toggle" data-sidebar-open aria-label="Buka navigasi"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z"/></svg></button>
+      <form class="trash-search" method="get"><svg viewBox="0 0 24 24"><path d="M9.5 3a6.5 6.5 0 1 0 3.98 11.64L19.85 21 21 19.85l-6.36-6.37A6.5 6.5 0 0 0 9.5 3Z"/></svg><input name="q" value="{{.Query}}" placeholder="Cari di Sampah"><input type="hidden" name="type" value="{{.Type}}"></form>
+      <a class="back-dashboard" href="/dashboard">Dashboard</a>
+    </header>
+    <div class="workspace-content trash-content">
+      <div class="trash-heading"><div><p>Kelola file terhapus</p><h1>Sampah</h1><span>Item tetap berada di sini sampai Anda memulihkan atau menghapusnya secara permanen.</span></div></div>
+      <form class="trash-filter" method="get"><input type="hidden" name="q" value="{{.Query}}"><label for="trash-type">Tampilkan dari</label><select id="trash-type" name="type" data-trash-filter><option value="" {{if eq .Type ""}}selected{{end}}>Semua drive</option><option value="personal" {{if eq .Type "personal"}}selected{{end}}>Drive Saya</option><option value="shared" {{if eq .Type "shared"}}selected{{end}}>Drive Bersama</option><option value="public" {{if eq .Type "public"}}selected{{end}}>Drive Publik</option></select><span>{{len .Items}} item</span></form>
+      {{if .Items}}<div class="trash-bulkbar"><label><input type="checkbox" data-select-all><span>Pilih semua</span></label><span class="selection-count" data-selection-count>0 item dipilih</span><div class="bulk-actions"><button type="button" class="bulk-restore" data-restore-selected disabled><svg viewBox="0 0 24 24"><path d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6a6 6 0 0 1-9.47 4.89l-1.42 1.42A8 8 0 1 0 12 5Z"/></svg>Pulihkan yang dipilih</button><button type="button" class="bulk-delete" data-delete-selected disabled><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg>Hapus yang dipilih</button></div></div>{{end}}
+      <section class="trash-panel">
+        {{range .Items}}
+        <article class="trash-item" data-trash-item data-node-id="{{.ID}}" data-node-name="{{.Name}}">
+          <label class="trash-check"><input type="checkbox" data-item-check aria-label="Pilih {{.Name}}"><span></span></label>
+          <div class="trash-file-icon {{.Type}}"><svg viewBox="0 0 24 24">{{if eq .Type "folder"}}<path d="M10 4H2v16h20V6H12l-2-2Z"/>{{else}}<path d="M14 2H6a2 2 0 0 0-2 2v16h14a2 2 0 0 0 2-2V8l-6-6Zm1 7V5.5L18.5 9H15Z"/>{{end}}</svg></div>
+          <div class="trash-name"><strong>{{.Name}}</strong><small>{{if .MIME}}{{.MIME}}{{else}}{{if eq .Type "folder"}}Folder{{else}}File{{end}}{{end}}</small></div>
+          <div class="trash-source"><span class="drive-badge {{.DriveType}}">{{if eq .DriveType "personal"}}Drive Saya{{else if eq .DriveType "shared"}}Drive Bersama{{else}}Drive Publik{{end}}</span><small>{{.DriveName}}</small></div>
+          <time><small>Dihapus</small>{{.DeletedAt.Format "02 Jan 2006, 15:04"}}</time>
+          <div class="trash-actions"><button type="button" class="restore-button" data-restore><svg viewBox="0 0 24 24"><path d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6a6 6 0 0 1-9.47 4.89l-1.42 1.42A8 8 0 1 0 12 5Z"/></svg>Pulihkan</button><button type="button" class="delete-button" data-delete title="Hapus permanen" aria-label="Hapus permanen {{.Name}}"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg></button></div>
+        </article>
+        {{else}}
+        <div class="trash-empty"><span><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg></span><h2>Sampah masih kosong</h2><p>Item yang Anda hapus dari drive akan muncul di sini.</p></div>
+        {{end}}
+      </section>
+    </div>
+  </main>
+</div>
+<script src="/static/js/workspace.js" defer></script>
+<script src="/static/js/trash.js" defer></script>
+</body>
+</html>
+{{end}}

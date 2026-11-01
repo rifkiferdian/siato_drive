@@ -6,6 +6,8 @@ import (
 	"cloud-drive/internal/modules/auth"
 	"cloud-drive/internal/modules/mydrive"
 	"cloud-drive/internal/modules/publicdrive"
+	"cloud-drive/internal/modules/shareddrive"
+	"cloud-drive/internal/modules/trash"
 	"cloud-drive/internal/platform/storage"
 	"cloud-drive/internal/router"
 	"context"
@@ -40,7 +42,11 @@ func main() {
 	ar := auth.NewRepository(db)
 	as := auth.NewService(ar, cfg.SessionTTL)
 	myDriveService := mydrive.NewService(mydrive.NewRepository(db), store, cfg.MaxUploadBytes)
-	app := router.New(cfg, templates, auth.NewHandler(as, cfg), as, publicdrive.NewHandler(publicdrive.NewRepository(db), store, cfg.DefaultOrgSlug), mydrive.NewHandler(myDriveService, cfg.MaxUploadBytes))
+	publicRepo := publicdrive.NewRepository(db)
+	publicManager := publicdrive.NewManagerHandler(publicdrive.NewManagerService(publicRepo, store, cfg.DefaultOrgSlug, cfg.MaxUploadBytes), cfg.MaxUploadBytes)
+	sharedManager := shareddrive.NewManagerHandler(shareddrive.NewManagerService(shareddrive.NewRepository(db), store, cfg.DefaultOrgSlug, cfg.MaxUploadBytes), cfg.MaxUploadBytes)
+	trashHandler := trash.NewHandler(trash.NewService(trash.NewRepository(db), store))
+	app := router.New(cfg, templates, auth.NewHandler(as, cfg), as, publicdrive.NewHandler(publicRepo, store, cfg.DefaultOrgSlug), mydrive.NewHandler(myDriveService, cfg.MaxUploadBytes), publicManager, sharedManager, trashHandler)
 	srv := &http.Server{Addr: cfg.Addr, Handler: app, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 5 * time.Minute, IdleTimeout: 2 * time.Minute}
 	go func() {
 		log.Printf("cloud-drive listening on %s", cfg.Addr)

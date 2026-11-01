@@ -21,7 +21,7 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID, parent *uuid.UUI
 	} else if sort == "size" {
 		order = "n.size_bytes DESC"
 	}
-	query := `SELECT n.id,n.name,n.type,coalesce(n.mime_type,''),n.size_bytes,n.updated_at FROM drive_nodes n JOIN drive_drives d ON d.id=n.drive_id WHERE d.organization_id=? AND d.type='public' AND n.parent_id <=> ? AND n.deleted_at IS NULL AND n.status='ready' AND (?='' OR n.name LIKE CONCAT('%',?,'%')) AND (?='' OR n.type=? OR n.mime_type LIKE CONCAT(?,'%')) ORDER BY ` + order
+	query := `SELECT n.id,n.parent_id,n.name,n.type,coalesce(n.mime_type,''),n.size_bytes,n.updated_at FROM drive_nodes n JOIN drive_drives d ON d.id=n.drive_id WHERE d.organization_id=? AND d.type='public' AND n.parent_id <=> ? AND n.deleted_at IS NULL AND n.status='ready' AND (?='' OR n.name LIKE CONCAT('%',?,'%')) AND (?='' OR n.type=? OR n.mime_type LIKE CONCAT(?,'%')) ORDER BY ` + order
 	var pid any
 	if parent != nil {
 		pid = parent.String()
@@ -34,8 +34,13 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID, parent *uuid.UUI
 	out := []Node{}
 	for rows.Next() {
 		var n Node
-		if err = rows.Scan(&n.ID, &n.Name, &n.Type, &n.MIME, &n.Size, &n.UpdatedAt); err != nil {
+		var parent sql.NullString
+		if err = rows.Scan(&n.ID, &parent, &n.Name, &n.Type, &n.MIME, &n.Size, &n.UpdatedAt); err != nil {
 			return nil, err
+		}
+		if parent.Valid {
+			id, _ := uuid.Parse(parent.String)
+			n.ParentID = &id
 		}
 		out = append(out, n)
 	}
