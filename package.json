@@ -1,0 +1,12 @@
+{
+  "name": "cloud-drive-frontend-assets",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned development dependencies for locally served frontend assets.",
+  "devDependencies": {
+    "sweetalert2": "11.26.25"
+  },
+  "scripts": {
+    "vendor:sweetalert": "node scripts/vendor-sweetalert.mjs"
+  }
+}

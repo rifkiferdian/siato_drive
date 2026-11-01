@@ -1,0 +1,6 @@
+DROP PROCEDURE IF EXISTS bootstrap_superadmin;
+DROP TRIGGER IF EXISTS drive_nodes_validate_update;
+DROP TRIGGER IF EXISTS drive_nodes_validate_insert;
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS system_notifications,system_jobs,system_settings,audit_download_logs,audit_activity_logs,sharing_share_links,sharing_resource_permissions,storage_quotas,storage_upload_parts,storage_upload_sessions,drive_favorites,drive_file_versions,drive_nodes,storage_objects,drive_drive_members,drive_drives,org_group_members,org_groups,org_memberships,org_units,org_organizations,auth_login_logs,auth_sessions,auth_role_permissions,auth_user_roles,auth_permissions,auth_roles,auth_users;
+SET FOREIGN_KEY_CHECKS=1;

@@ -1,0 +1,12 @@
+.env
+bin/
+node_modules/
+tmp/
+air-build.log
+storage/objects/*
+storage/temporary/*
+web/static/css/app.css
+server.exe
+migrate.exe
+seed.exe
+!.gitkeep
