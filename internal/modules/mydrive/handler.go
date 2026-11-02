@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 )
 
 type Handler struct {
@@ -174,6 +175,95 @@ func (h *Handler) Trash(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Dipindahkan ke Sampah"})
+}
+func (h *Handler) CreateShare(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apiError(c, http.StatusBadRequest, "item tidak valid")
+		return
+	}
+	days, err := strconv.Atoi(c.PostForm("expires_days"))
+	if err != nil || days < 0 {
+		apiError(c, http.StatusBadRequest, "masa berlaku tidak valid")
+		return
+	}
+	allowDownload := c.PostForm("allow_download") != "false"
+	share, err := h.service.CreateShare(c.Request.Context(), currentSession(c).UserID, id, days, allowDownload)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"token": share.Token, "allow_download": share.AllowDownload, "expires_at": share.ExpiresAt})
+}
+func (h *Handler) RevokeShare(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err == nil {
+		err = h.service.RevokeShare(c.Request.Context(), currentSession(c).UserID, id)
+	}
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Link publik dinonaktifkan"})
+}
+func (h *Handler) ShareStatuses(c *gin.Context) {
+	statuses, err := h.service.ShareStatuses(c.Request.Context(), currentSession(c).UserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "status link tidak tersedia"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": statuses})
+}
+func (h *Handler) SharedPage(c *gin.Context) {
+	root, err := h.service.ResolveShare(c.Request.Context(), c.Param("token"))
+	if err != nil {
+		c.HTML(http.StatusNotFound, "error.html", gin.H{"Title": "Link tidak tersedia", "Message": "Link mungkin sudah dinonaktifkan, kedaluwarsa, atau item telah dipindahkan ke Sampah."})
+		return
+	}
+	folderID, ok := optionalUUID(c.Query("folder"))
+	if !ok {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	current, nodes, err := h.service.SharedBrowse(c.Request.Context(), root, folderID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	c.HTML(http.StatusOK, "personal-share.html", gin.H{"Title": root.Name, "Root": root, "Current": current, "Nodes": nodes, "Token": c.Param("token")})
+}
+func (h *Handler) SharedPreview(c *gin.Context)  { h.serveSharedFile(c, true) }
+func (h *Handler) SharedDownload(c *gin.Context) { h.serveSharedFile(c, false) }
+func (h *Handler) serveSharedFile(c *gin.Context, inline bool) {
+	root, err := h.service.ResolveShare(c.Request.Context(), c.Param("token"))
+	if err != nil || (!inline && !root.AllowDownload) {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	item, file, err := h.service.SharedDownload(c.Request.Context(), root, id)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+	if inline && !previewable(item.Node.MIME) {
+		c.AbortWithStatus(http.StatusUnsupportedMediaType)
+		return
+	}
+	kind := "attachment"
+	if inline {
+		kind = "inline"
+		c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'self'")
+	}
+	c.Header("Content-Disposition", mime.FormatMediaType(kind, map[string]string{"filename": item.Node.Name}))
+	c.Header("Content-Type", item.Node.MIME)
+	c.Header("X-Content-Type-Options", "nosniff")
+	http.ServeContent(c.Writer, c.Request, item.Node.Name, item.Node.UpdatedAt, file)
 }
 func currentSession(c *gin.Context) auth.Session {
 	v, _ := c.Get(middleware.SessionKey)

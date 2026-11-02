@@ -14,6 +14,7 @@ import (
 
 func main() {
 	down := flag.Bool("down", false, "run down migration")
+	filePath := flag.String("file", "", "run a specific migration file")
 	flag.Parse()
 	cfg, err := config.Load()
 	if err != nil {
@@ -27,6 +28,9 @@ func main() {
 	file := "migrations/000001_initial.up.sql"
 	if *down {
 		file = "migrations/000001_initial.down.sql"
+	}
+	if *filePath != "" {
+		file = *filePath
 	}
 	data, err := os.ReadFile(file)
 	if err != nil {

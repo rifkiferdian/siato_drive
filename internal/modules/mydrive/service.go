@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"cloud-drive/internal/platform/storage"
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -11,6 +14,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var ErrInvalidInput = errors.New("input tidak valid")
@@ -144,6 +148,77 @@ func (s *Service) Trash(ctx context.Context, userID, nodeID uuid.UUID) error {
 		return err
 	}
 	return s.repo.Trash(ctx, d.ID, userID, nodeID)
+}
+func (s *Service) CreateShare(ctx context.Context, userID, nodeID uuid.UUID, expiresInDays int, allowDownload bool) (ShareLink, error) {
+	drive, err := s.repo.PersonalDrive(ctx, userID)
+	if err != nil {
+		return ShareLink{}, err
+	}
+	if _, err = s.repo.Node(ctx, drive.ID, nodeID); err != nil {
+		return ShareLink{}, err
+	}
+	raw := make([]byte, 32)
+	if _, err = rand.Read(raw); err != nil {
+		return ShareLink{}, err
+	}
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	hash := sha256.Sum256([]byte(token))
+	var expiresAt *time.Time
+	if expiresInDays > 0 {
+		if expiresInDays > 365 {
+			return ShareLink{}, ErrInvalidInput
+		}
+		value := time.Now().UTC().Add(time.Duration(expiresInDays) * 24 * time.Hour)
+		expiresAt = &value
+	}
+	if err = s.repo.CreateShareLink(ctx, nodeID, userID, hash[:], expiresAt, allowDownload); err != nil {
+		return ShareLink{}, err
+	}
+	return ShareLink{Token: token, ExpiresAt: expiresAt, AllowDownload: allowDownload}, nil
+}
+func (s *Service) RevokeShare(ctx context.Context, userID, nodeID uuid.UUID) error {
+	drive, err := s.repo.PersonalDrive(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return s.repo.RevokeShareLink(ctx, drive.ID, nodeID)
+}
+func (s *Service) ShareStatuses(ctx context.Context, userID uuid.UUID) ([]ShareStatus, error) {
+	drive, err := s.repo.PersonalDrive(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.repo.ShareStatuses(ctx, drive.ID)
+}
+func (s *Service) ResolveShare(ctx context.Context, token string) (SharedRoot, error) {
+	if len(token) < 32 || len(token) > 128 {
+		return SharedRoot{}, ErrNotFound
+	}
+	hash := sha256.Sum256([]byte(token))
+	return s.repo.SharedRoot(ctx, hash[:])
+}
+func (s *Service) SharedBrowse(ctx context.Context, root SharedRoot, folderID *uuid.UUID) (Node, []Node, error) {
+	if root.Type == "file" {
+		return root.Node, nil, nil
+	}
+	id := root.ID
+	if folderID != nil {
+		id = *folderID
+	}
+	folder, err := s.repo.SharedFolder(ctx, root, id)
+	if err != nil {
+		return Node{}, nil, err
+	}
+	nodes, err := s.repo.SharedChildren(ctx, root, id)
+	return folder, nodes, err
+}
+func (s *Service) SharedDownload(ctx context.Context, root SharedRoot, nodeID uuid.UUID) (Download, io.ReadSeekCloser, error) {
+	file, err := s.repo.SharedFile(ctx, root, nodeID)
+	if err != nil {
+		return Download{}, nil, err
+	}
+	src, err := s.storage.Open(ctx, file.StorageKey)
+	return file, src, err
 }
 func safeName(name string) string {
 	name = strings.TrimSpace(name)

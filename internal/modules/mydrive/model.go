@@ -30,3 +30,19 @@ type Download struct {
 	Node       Node
 	StorageKey string
 }
+type ShareLink struct {
+	Token         string
+	ExpiresAt     *time.Time
+	AllowDownload bool
+}
+type SharedRoot struct {
+	Node
+	DriveID       uuid.UUID
+	OwnerName     string
+	AllowDownload bool
+}
+type ShareStatus struct {
+	NodeID    uuid.UUID  `json:"node_id"`
+	Status    string     `json:"status"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+}

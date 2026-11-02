@@ -54,6 +54,11 @@ func TestWorkspaceTemplatesRender(t *testing.T) {
 		{"users.html", map[string]any{"Title": "User Management", "Session": session, "Users": []usermanagement.User{}}},
 		{"profile.html", map[string]any{"Title": "Profil Saya", "Session": session}},
 		{"public.html", map[string]any{"Title": "Publik", "Org": publicdrive.Organization{ID: uuid.New(), Slug: "default", Name: "Organisasi"}, "Nodes": []publicdrive.Node{}}},
+		{"personal-share.html", func() map[string]any {
+			id := uuid.New()
+			node := mydrive.Node{ID: id, Name: "Materi", Type: "folder"}
+			return map[string]any{"Title": "Materi", "Root": mydrive.SharedRoot{Node: node, OwnerName: "Dosen", AllowDownload: true}, "Current": node, "Nodes": []mydrive.Node{}, "Token": "token"}
+		}()},
 		{"error.html", map[string]any{"Title": "Tidak ditemukan", "Message": "Halaman tidak tersedia."}},
 	}
 	for _, test := range tests {

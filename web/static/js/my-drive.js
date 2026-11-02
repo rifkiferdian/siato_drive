@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
   const parent = new URLSearchParams(location.search).get("folder") || "";
   setupDriveView(Swal);
+  await loadPersonalShareStatuses();
   document.querySelector("[data-sort-select]")?.addEventListener("change", (event) => event.currentTarget.form.requestSubmit());
   const post = async (url, body) => {
     const response = await fetch(url, { method: "POST", headers: { "X-CSRF-Token": csrf }, body });
@@ -146,7 +147,11 @@ function setupDriveView(Swal) {
     actionMenu.className = "node-action-menu";
     actionMenu.setAttribute("role", "menu");
     actionMenu.hidden = true;
-    actionMenu.innerHTML = `<button type="button" role="menuitem" data-menu-rename><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25-.75 4.5 4.5-.75L19.81 7.94l-3.75-3.75L3 17.25Z"/></svg><span>Ubah nama</span></button><button type="button" role="menuitem" class="danger" data-menu-trash><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg><span>Pindahkan ke Sampah</span></button>`;
+    actionMenu.innerHTML = `<button type="button" role="menuitem" data-menu-share><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-7-4.1a3.4 3.4 0 0 0 0-2.2l7-4.1A3 3 0 1 0 15 5c0 .2 0 .4.1.6l-7 4.1a3 3 0 1 0 0 4.6l7 4.1A3 3 0 1 0 18 16Z"/></svg><span>Bagikan link publik</span></button><button type="button" role="menuitem" data-menu-rename><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25-.75 4.5 4.5-.75L19.81 7.94l-3.75-3.75L3 17.25Z"/></svg><span>Ubah nama</span></button><button type="button" role="menuitem" class="danger" data-menu-trash><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg><span>Pindahkan ke Sampah</span></button>`;
+    const revokeShareButton = document.createElement("button");
+    revokeShareButton.type = "button"; revokeShareButton.setAttribute("role", "menuitem"); revokeShareButton.dataset.menuRevoke = "";
+    revokeShareButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 6.4 5.6 4.2 4.2 5.6l2.2 2.2A4 4 0 0 0 9 15h3v-2H9a2 2 0 0 1-1.2-3.6l2 2 1.4-1.4-2-2A2 2 0 0 1 9 8h3V6H9c-.4 0-.8.1-1.2.4ZM15 9h-3v2h3a2 2 0 0 1 1.2 3.6l-2-2-1.4 1.4 2 2c.1 0 .1.1.2.1V18h2v-.8a4 4 0 0 0-2-8.2Z"/></svg><span>Nonaktifkan link</span>`;
+    actionMenu.insertBefore(revokeShareButton, actionMenu.querySelector("[data-menu-rename]"));
     moreButton.addEventListener("click", (event) => {
       event.stopPropagation();
       document.querySelectorAll(".node-action-menu:not([hidden])").forEach((openMenu) => { if (openMenu !== actionMenu) { openMenu.hidden = true; openMenu.previousElementSibling?.setAttribute("aria-expanded", "false"); } });
@@ -154,12 +159,63 @@ function setupDriveView(Swal) {
       moreButton.setAttribute("aria-expanded", String(!actionMenu.hidden));
     });
     actionMenu.addEventListener("click", (event) => event.stopPropagation());
+    actionMenu.querySelector("[data-menu-share]").addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); showPersonalShare(Swal, article); });
+    revokeShareButton.addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); revokePersonalShare(Swal, article); });
     actionMenu.querySelector("[data-menu-rename]").addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); renameButton.click(); });
     actionMenu.querySelector("[data-menu-trash]").addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); trashButton.click(); });
     document.addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); });
     actions.append(moreButton, actionMenu);
   });
   applyView();
+}
+
+async function showPersonalShare(Swal, article) {
+  const settings = await Swal.fire({ title: "Bagikan secara publik", text: article.dataset.nodeName, html: `<div class="share-folder-box"><label>Masa berlaku<select id="personal-share-expiry"><option value="0">Tanpa batas</option><option value="7">7 hari</option><option value="30">30 hari</option></select></label><label class="share-download-option"><input id="personal-share-download" type="checkbox" checked><span>Izinkan mahasiswa mengunduh file</span></label><small>Penerima link tidak perlu login dan hanya dapat melihat isi yang dibagikan.</small></div>`, showCancelButton: true, confirmButtonText: "Buat Link", cancelButtonText: "Batal", confirmButtonColor: "#7c3aed", preConfirm: () => ({ days: document.querySelector("#personal-share-expiry").value, download: document.querySelector("#personal-share-download").checked }) });
+  if (!settings.isConfirmed) return;
+  const body = new FormData(); body.set("expires_days", settings.value.days); body.set("allow_download", String(settings.value.download));
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const response = await fetch(`/api/v1/my-drive/nodes/${article.dataset.nodeId}/share`, { method: "POST", headers: { "X-CSRF-Token": csrf }, body });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) { await Swal.fire({ icon: "error", title: "Link gagal dibuat", text: data.error || "Operasi gagal", confirmButtonColor: "#7c3aed" }); return; }
+  updatePersonalShareBadge(article, "active", data.expires_at);
+  const url = `${location.origin}/s/${data.token}`;
+  const result = await Swal.fire({ icon: "success", title: "Link publik siap", html: `<div class="share-folder-box"><label>Link untuk mahasiswa<input value="${escapeHTML(url)}" readonly></label><small>Membuat link baru untuk item ini akan menonaktifkan link sebelumnya.</small></div>`, showCancelButton: true, showDenyButton: true, confirmButtonText: "Salin Link", denyButtonText: "Nonaktifkan", cancelButtonText: "Tutup", confirmButtonColor: "#7c3aed", denyButtonColor: "#dc2626" });
+  if (result.isConfirmed) { await copyPersonalShare(url); await Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Link berhasil disalin", timer: 1600, showConfirmButton: false }); }
+  if (result.isDenied) { const revoke = await fetch(`/api/v1/my-drive/nodes/${article.dataset.nodeId}/share/revoke`, { method: "POST", headers: { "X-CSRF-Token": csrf }, body: new FormData() }); if (revoke.ok) { updatePersonalShareBadge(article, "inactive"); await Swal.fire({ icon: "success", title: "Link dinonaktifkan", timer: 1300, showConfirmButton: false }); } }
+}
+
+async function copyPersonalShare(value) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(value);
+  const input = document.createElement("textarea"); input.value = value; input.style.position = "fixed"; input.style.opacity = "0"; document.body.appendChild(input); input.select(); document.execCommand("copy"); input.remove();
+}
+
+async function revokePersonalShare(Swal, article) {
+  const result = await Swal.fire({ icon: "warning", title: "Nonaktifkan link publik?", text: `Link untuk ${article.dataset.nodeName} tidak dapat digunakan lagi.`, showCancelButton: true, confirmButtonText: "Nonaktifkan", cancelButtonText: "Batal", confirmButtonColor: "#dc2626" });
+  if (!result.isConfirmed) return;
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const response = await fetch(`/api/v1/my-drive/nodes/${article.dataset.nodeId}/share/revoke`, { method: "POST", headers: { "X-CSRF-Token": csrf }, body: new FormData() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) { await Swal.fire({ icon: "info", title: "Tidak ada link aktif", text: data.error || "Link publik sudah tidak aktif.", confirmButtonColor: "#7c3aed" }); return; }
+  updatePersonalShareBadge(article, "inactive");
+  await Swal.fire({ icon: "success", title: "Link dinonaktifkan", timer: 1300, showConfirmButton: false });
+}
+
+async function loadPersonalShareStatuses() {
+  try {
+    const response = await fetch("/api/v1/my-drive/share-statuses", { headers: { Accept: "application/json" } });
+    if (!response.ok) return;
+    const data = await response.json();
+    const statuses = new Map((data.items || []).map((item) => [item.node_id, item]));
+    document.querySelectorAll(".drive-list article[data-node-id]").forEach((article) => { const item = statuses.get(article.dataset.nodeId); updatePersonalShareBadge(article, item?.status || "inactive", item?.expires_at); });
+  } catch (error) { console.error("Status link publik gagal dimuat", error); }
+}
+
+function updatePersonalShareBadge(article, status, expiresAt = null) {
+  let badge = article.querySelector(".personal-share-status");
+  if (!badge) { badge = document.createElement("span"); badge.className = "personal-share-status"; article.querySelector(".node-main>div")?.appendChild(badge); }
+  badge.className = `personal-share-status ${status}`;
+  badge.textContent = status === "active" ? "Link aktif" : status === "expired" ? "Kedaluwarsa" : "Link nonaktif";
+  badge.title = expiresAt ? `Berlaku sampai ${new Date(expiresAt).toLocaleString("id-ID")}` : status === "active" ? "Link tidak memiliki batas waktu" : "Link publik tidak dapat digunakan";
 }
 
 function setupGridPreviews(list) {
