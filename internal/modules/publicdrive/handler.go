@@ -30,6 +30,7 @@ func (h *Handler) Index(c *gin.Context) {
 		return
 	}
 	var parent *uuid.UUID
+	var breadcrumbs []Crumb
 	if raw := c.Query("folder"); raw != "" {
 		id, e := uuid.Parse(raw)
 		if e != nil {
@@ -37,13 +38,30 @@ func (h *Handler) Index(c *gin.Context) {
 			return
 		}
 		parent = &id
+		current, e := h.repo.PublicNode(c.Request.Context(), o.ID, id)
+		if e != nil || current.Type != "folder" {
+			c.HTML(http.StatusNotFound, "error.html", gin.H{"Title": "Folder tidak ditemukan", "Message": "Folder publik tidak ditemukan atau sudah tidak tersedia."})
+			return
+		}
+		for depth := 0; depth < 100; depth++ {
+			currentID := current.ID
+			breadcrumbs = append([]Crumb{{ID: &currentID, Name: current.Name}}, breadcrumbs...)
+			if current.ParentID == nil {
+				break
+			}
+			current, e = h.repo.PublicNode(c.Request.Context(), o.ID, *current.ParentID)
+			if e != nil {
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
 	}
 	nodes, err := h.repo.List(c.Request.Context(), o.ID, parent, c.Query("q"), c.Query("type"), c.Query("sort"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	c.HTML(http.StatusOK, "public.html", gin.H{"Title": o.Name + " — Drive Publik", "Org": o, "Nodes": nodes, "Parent": parent, "Query": c.Query("q")})
+	c.HTML(http.StatusOK, "public.html", gin.H{"Title": o.Name + " — Drive Publik", "Org": o, "Nodes": nodes, "Parent": parent, "Breadcrumbs": breadcrumbs, "Query": c.Query("q")})
 }
 func (h *Handler) Download(c *gin.Context) {
 	h.serveFile(c, false)

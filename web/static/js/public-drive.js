@@ -18,7 +18,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
   const parent = new URLSearchParams(location.search).get("folder") || "";
   setupDriveView(Swal);
-  document.querySelector("[data-sort-select]")?.addEventListener("change", (event) => event.currentTarget.form.requestSubmit());
+  const sortSelect = document.querySelector("[data-sort-select]");
+  if (sortSelect && !sortSelect.querySelector('option[value="type"]')) {
+    const option = document.createElement("option"); option.value = "type"; option.textContent = "Jenis File"; sortSelect.appendChild(option);
+    sortSelect.value = new URLSearchParams(location.search).get("sort") || "name";
+  }
+  sortSelect?.addEventListener("change", (event) => event.currentTarget.form.requestSubmit());
   const post = async (url, body) => {
     const response = await fetch(url, { method: "POST", headers: { "X-CSRF-Token": csrf }, body });
     const data = await response.json().catch(() => ({}));

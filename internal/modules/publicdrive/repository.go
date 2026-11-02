@@ -14,12 +14,27 @@ func (r *Repository) Organization(ctx context.Context, slug string) (Organizatio
 	err := r.db.QueryRowContext(ctx, `SELECT id,slug,name FROM org_organizations WHERE slug=? AND active=1`, slug).Scan(&o.ID, &o.Slug, &o.Name)
 	return o, err
 }
+func (r *Repository) PublicNode(ctx context.Context, orgID, nodeID uuid.UUID) (Node, error) {
+	var n Node
+	var parent sql.NullString
+	err := r.db.QueryRowContext(ctx, `SELECT n.id,n.parent_id,n.name,n.type,COALESCE(n.mime_type,''),n.size_bytes,n.updated_at FROM drive_nodes n JOIN drive_drives d ON d.id=n.drive_id WHERE n.id=? AND d.organization_id=? AND d.type='public' AND n.deleted_at IS NULL AND n.status='ready'`, nodeID.String(), orgID.String()).Scan(&n.ID, &parent, &n.Name, &n.Type, &n.MIME, &n.Size, &n.UpdatedAt)
+	if parent.Valid {
+		id, parseErr := uuid.Parse(parent.String)
+		if parseErr != nil {
+			return n, parseErr
+		}
+		n.ParentID = &id
+	}
+	return n, err
+}
 func (r *Repository) List(ctx context.Context, orgID uuid.UUID, parent *uuid.UUID, q, kind, sort string) ([]Node, error) {
 	order := "n.type DESC, lower(n.name) ASC"
 	if sort == "date" {
-		order = "n.updated_at DESC"
+		order = "n.type DESC, n.updated_at DESC"
 	} else if sort == "size" {
-		order = "n.size_bytes DESC"
+		order = "n.type DESC, n.size_bytes DESC, lower(n.name) ASC"
+	} else if sort == "type" {
+		order = "n.type DESC, lower(coalesce(n.mime_type,'')) ASC, lower(n.name) ASC"
 	}
 	query := `WITH RECURSIVE visible_nodes AS (
 		SELECT n.id,n.drive_id,n.parent_id,n.name,n.type,n.mime_type,n.size_bytes,n.updated_at
