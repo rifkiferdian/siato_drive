@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"mime"
 	"net/http"
 	"strings"
 )
@@ -45,6 +46,12 @@ func (h *Handler) Index(c *gin.Context) {
 	c.HTML(http.StatusOK, "public.html", gin.H{"Title": o.Name + " — Drive Publik", "Org": o, "Nodes": nodes, "Parent": parent, "Query": c.Query("q")})
 }
 func (h *Handler) Download(c *gin.Context) {
+	h.serveFile(c, false)
+}
+func (h *Handler) Preview(c *gin.Context) {
+	h.serveFile(c, true)
+}
+func (h *Handler) serveFile(c *gin.Context, inline bool) {
 	o, err := h.repo.Organization(c.Request.Context(), c.Param("organizationSlug"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
@@ -66,9 +73,35 @@ func (h *Handler) Download(c *gin.Context) {
 		return
 	}
 	defer src.Close()
-	h.repo.LogDownload(c.Request.Context(), o.ID, id, c.ClientIP())
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename*=UTF-8''%s`, strings.ReplaceAll(f.Name, "%", "%25")))
+	if inline && !publicPreviewable(f.MIME) {
+		c.AbortWithStatus(http.StatusUnsupportedMediaType)
+		return
+	}
+	if !inline {
+		h.repo.LogDownload(c.Request.Context(), o.ID, id, c.ClientIP())
+	}
+	disposition := "attachment"
+	if inline {
+		disposition = "inline"
+		c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'self'")
+		c.Header("Cache-Control", "public, max-age=300")
+	}
+	value := mime.FormatMediaType(disposition, map[string]string{"filename": f.Name})
+	if value == "" {
+		value = fmt.Sprintf(`%s; filename*=UTF-8''%s`, disposition, strings.ReplaceAll(f.Name, "%", "%25"))
+	}
+	c.Header("Content-Disposition", value)
 	c.Header("Content-Type", f.MIME)
 	c.Header("X-Content-Type-Options", "nosniff")
 	http.ServeContent(c.Writer, c.Request, f.Name, f.UpdatedAt, src)
+}
+
+func publicPreviewable(mimeType string) bool {
+	mimeType = strings.ToLower(strings.TrimSpace(strings.Split(mimeType, ";")[0]))
+	switch mimeType {
+	case "application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "text/plain":
+		return true
+	default:
+		return false
+	}
 }

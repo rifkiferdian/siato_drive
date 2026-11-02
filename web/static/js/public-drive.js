@@ -1,4 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  document.querySelectorAll(".node-size").forEach((element) => {
+    const bytes = Number.parseInt(element.textContent, 10);
+    if (Number.isFinite(bytes)) element.textContent = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  });
   const driveActions = document.querySelector(".drive-actions");
   if (driveActions) {
     const publicLink = document.createElement("a");

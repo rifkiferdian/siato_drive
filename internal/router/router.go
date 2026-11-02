@@ -29,6 +29,7 @@ func New(cfg config.Config, templates *template.Template, ah *auth.Handler, as *
 	r.GET("/public", ph.Index)
 	r.GET("/public/:organizationSlug", ph.Index)
 	r.GET("/public/:organizationSlug/folders/:id", func(c *gin.Context) { c.Request.URL.RawQuery = "folder=" + c.Param("id"); ph.Index(c) })
+	r.GET("/public/:organizationSlug/files/:id/preview", ph.Preview)
 	r.GET("/public/:organizationSlug/files/:id/download", ph.Download)
 	secured := r.Group("")
 	secured.Use(middleware.RequireAuth(as, cfg.CookieName))

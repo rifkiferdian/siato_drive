@@ -21,12 +21,27 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID, parent *uuid.UUI
 	} else if sort == "size" {
 		order = "n.size_bytes DESC"
 	}
-	query := `SELECT n.id,n.parent_id,n.name,n.type,coalesce(n.mime_type,''),n.size_bytes,n.updated_at FROM drive_nodes n JOIN drive_drives d ON d.id=n.drive_id WHERE d.organization_id=? AND d.type='public' AND n.parent_id <=> ? AND n.deleted_at IS NULL AND n.status='ready' AND (?='' OR n.name LIKE CONCAT('%',?,'%')) AND (?='' OR n.type=? OR n.mime_type LIKE CONCAT(?,'%')) ORDER BY ` + order
+	query := `WITH RECURSIVE visible_nodes AS (
+		SELECT n.id,n.drive_id,n.parent_id,n.name,n.type,n.mime_type,n.size_bytes,n.updated_at
+		FROM drive_nodes n
+		JOIN drive_drives d ON d.id=n.drive_id
+		WHERE d.organization_id=? AND d.type='public' AND n.parent_id IS NULL AND n.deleted_at IS NULL AND n.status='ready'
+		UNION ALL
+		SELECT child.id,child.drive_id,child.parent_id,child.name,child.type,child.mime_type,child.size_bytes,child.updated_at
+		FROM drive_nodes child
+		JOIN visible_nodes parent ON parent.id=child.parent_id AND parent.drive_id=child.drive_id
+		WHERE child.deleted_at IS NULL AND child.status='ready'
+	)
+	SELECT n.id,n.parent_id,n.name,n.type,coalesce(n.mime_type,''),n.size_bytes,n.updated_at
+	FROM visible_nodes n
+	WHERE ((?='' AND n.parent_id <=> ?) OR (?<>'' AND n.name LIKE CONCAT('%',?,'%')))
+	AND (?='' OR n.type=? OR n.mime_type LIKE CONCAT(?,'%'))
+	ORDER BY ` + order
 	var pid any
 	if parent != nil {
 		pid = parent.String()
 	}
-	rows, err := r.db.QueryContext(ctx, query, orgID.String(), pid, q, q, kind, kind, kind)
+	rows, err := r.db.QueryContext(ctx, query, orgID.String(), q, pid, q, q, kind, kind, kind)
 	if err != nil {
 		return nil, err
 	}
