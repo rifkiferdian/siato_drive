@@ -2,6 +2,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   let Swal;
   try { Swal = await loadSweetAlert(); } catch (error) { console.error(error); return; }
   await loadDriveUsage("/api/v1/shared-drive/usage", "Penyimpanan Drive Bersama");
+  const pageHead = document.querySelector(".drive-page-head");
+  if (pageHead && !document.querySelector(".shared-drive-info")) {
+    const info = document.createElement("section");
+    info.className = "shared-drive-info";
+    info.innerHTML = `<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg></span><div><strong>Ruang kolaborasi internal</strong><p>Drive Bersama hanya dapat diakses oleh pengguna yang memiliki akun STIE-WW Drive. Gunakan ruang ini untuk berbagi dan mengelola dokumen bersama antar pengguna secara aman.</p></div>`;
+    pageHead.insertAdjacentElement("afterend", info);
+  }
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
   const parent = new URLSearchParams(location.search).get("folder") || "";
   setupDriveView(Swal);
