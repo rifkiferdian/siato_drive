@@ -63,6 +63,58 @@ func (h *Handler) Index(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "public.html", gin.H{"Title": o.Name + " — Drive Publik", "Org": o, "Nodes": nodes, "Parent": parent, "Breadcrumbs": breadcrumbs, "Query": c.Query("q")})
 }
+func (h *Handler) Embed(c *gin.Context) {
+	h.renderSharedFolder(c, true)
+}
+func (h *Handler) SharedFolder(c *gin.Context) {
+	h.renderSharedFolder(c, false)
+}
+func (h *Handler) renderSharedFolder(c *gin.Context, allowFrame bool) {
+	o, err := h.repo.Organization(c.Request.Context(), h.defaultSlug)
+	if err != nil {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	folder, err := h.repo.PublicNode(c.Request.Context(), o.ID, id)
+	if err != nil || folder.Type != "folder" {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	breadcrumbs := []Crumb{}
+	current := folder
+	for depth := 0; depth < 100; depth++ {
+		currentID := current.ID
+		breadcrumbs = append([]Crumb{{ID: &currentID, Name: current.Name}}, breadcrumbs...)
+		if current.ParentID == nil {
+			break
+		}
+		current, err = h.repo.PublicNode(c.Request.Context(), o.ID, *current.ParentID)
+		if err != nil {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+	}
+	nodes, err := h.repo.List(c.Request.Context(), o.ID, &id, "", "", c.Query("sort"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	if allowFrame {
+		// Hanya endpoint embed yang diizinkan berada di iframe lintas situs.
+		c.Writer.Header().Del("X-Frame-Options")
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; object-src 'none'; frame-ancestors *")
+	}
+	basePath := "/share/folders/"
+	if allowFrame {
+		basePath = "/embed/folders/"
+	}
+	c.HTML(http.StatusOK, "public-embed.html", gin.H{"Title": folder.Name, "Org": o, "Folder": folder, "Nodes": nodes, "Breadcrumbs": breadcrumbs, "BasePath": basePath, "Sort": c.Query("sort"), "Embed": allowFrame})
+}
 func (h *Handler) Download(c *gin.Context) {
 	h.serveFile(c, false)
 }

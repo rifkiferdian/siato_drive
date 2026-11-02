@@ -164,7 +164,8 @@ function setupDriveView(Swal) {
     actionMenu.className = "node-action-menu";
     actionMenu.setAttribute("role", "menu");
     actionMenu.hidden = true;
-    actionMenu.innerHTML = `<button type="button" role="menuitem" data-menu-rename><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25-.75 4.5 4.5-.75L19.81 7.94l-3.75-3.75L3 17.25Z"/></svg><span>Ubah nama</span></button><button type="button" role="menuitem" class="danger" data-menu-trash><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg><span>Pindahkan ke Sampah</span></button>`;
+    const isFolder = article.querySelector(".node-icon")?.classList.contains("folder");
+    actionMenu.innerHTML = `${isFolder ? '<button type="button" role="menuitem" data-menu-share><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-7-4.1a3.4 3.4 0 0 0 0-2.2l7-4.1A3 3 0 1 0 15 5c0 .2 0 .4.1.6l-7 4.1a3 3 0 1 0 0 4.6l7 4.1A3 3 0 1 0 18 16Z"/></svg><span>Bagikan &amp; Embed</span></button>' : ''}<button type="button" role="menuitem" data-menu-rename><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25-.75 4.5 4.5-.75L19.81 7.94l-3.75-3.75L3 17.25Z"/></svg><span>Ubah nama</span></button><button type="button" role="menuitem" class="danger" data-menu-trash><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12ZM15.5 4l-1-1h-5l-1 1H5v2h14V4h-3.5Z"/></svg><span>Pindahkan ke Sampah</span></button>`;
     moreButton.addEventListener("click", (event) => {
       event.stopPropagation();
       document.querySelectorAll(".node-action-menu:not([hidden])").forEach((openMenu) => { if (openMenu !== actionMenu) { openMenu.hidden = true; openMenu.previousElementSibling?.setAttribute("aria-expanded", "false"); } });
@@ -172,12 +173,32 @@ function setupDriveView(Swal) {
       moreButton.setAttribute("aria-expanded", String(!actionMenu.hidden));
     });
     actionMenu.addEventListener("click", (event) => event.stopPropagation());
+    actionMenu.querySelector("[data-menu-share]")?.addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); showFolderShare(Swal, article.dataset.nodeId, article.dataset.nodeName); });
     actionMenu.querySelector("[data-menu-rename]").addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); renameButton.click(); });
     actionMenu.querySelector("[data-menu-trash]").addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); trashButton.click(); });
     document.addEventListener("click", () => { actionMenu.hidden = true; moreButton.setAttribute("aria-expanded", "false"); });
     actions.append(moreButton, actionMenu);
   });
   applyView();
+}
+
+async function showFolderShare(Swal, folderID, folderName) {
+  const publicURL = `${location.origin}/share/folders/${encodeURIComponent(folderID)}`;
+  const embedURL = `${location.origin}/embed/folders/${encodeURIComponent(folderID)}`;
+  const safeTitle = folderName.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  const embedCode = `<iframe src="${embedURL}" title="${safeTitle}" width="100%" height="600" loading="lazy" style="border:0;border-radius:12px"></iframe>`;
+  const result = await Swal.fire({
+    icon: "info", title: "Bagikan folder", text: folderName,
+    html: `<div class="share-folder-box"><label>Link publik<input value="${escapeHTML(publicURL)}" readonly></label><label>Kode embed<textarea rows="5" readonly>${escapeHTML(embedCode)}</textarea></label><small>Tempel kode embed pada halaman HTML website tujuan.</small></div>`,
+    showCancelButton: true, showDenyButton: true, confirmButtonText: "Salin link", denyButtonText: "Salin embed", cancelButtonText: "Tutup", confirmButtonColor: "#7c3aed", denyButtonColor: "#5b21b6"
+  });
+  if (result.isConfirmed) { await copyShareText(publicURL); await Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Link berhasil disalin", timer: 1600, showConfirmButton: false }); }
+  if (result.isDenied) { await copyShareText(embedCode); await Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Kode embed berhasil disalin", timer: 1600, showConfirmButton: false }); }
+}
+
+async function copyShareText(value) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(value);
+  const input = document.createElement("textarea"); input.value = value; input.style.position = "fixed"; input.style.opacity = "0"; document.body.appendChild(input); input.select(); document.execCommand("copy"); input.remove();
 }
 
 function setupGridPreviews(list) {

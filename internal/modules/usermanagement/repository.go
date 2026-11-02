@@ -16,7 +16,7 @@ type Repository struct{ db *sql.DB }
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 func (r *Repository) List(ctx context.Context) ([]User, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT u.id,u.email,u.display_name,u.active,u.created_at,CASE WHEN SUM(ar.code IN ('super_admin','org_admin'))>0 THEN 'admin' ELSE 'user' END role FROM auth_users u LEFT JOIN auth_user_roles ur ON ur.user_id=u.id LEFT JOIN auth_roles ar ON ar.id=ur.role_id GROUP BY u.id,u.email,u.display_name,u.active,u.created_at ORDER BY u.created_at DESC`)
+	rows, err := r.db.QueryContext(ctx, `SELECT u.id,u.email,u.display_name,u.active,u.created_at,CASE WHEN SUM(ar.code IN ('super_admin','org_admin'))>0 THEN 'admin' ELSE 'user' END role,COALESCE((SELECT SUM(n.size_bytes) FROM drive_drives d JOIN drive_nodes n ON n.drive_id=d.id AND n.type='file' JOIN storage_objects o ON o.id=n.storage_object_id AND o.state='ready' WHERE d.type='personal' AND d.owner_user_id=u.id),0) storage_bytes FROM auth_users u LEFT JOIN auth_user_roles ur ON ur.user_id=u.id LEFT JOIN auth_roles ar ON ar.id=ur.role_id GROUP BY u.id,u.email,u.display_name,u.active,u.created_at ORDER BY u.created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (r *Repository) List(ctx context.Context) ([]User, error) {
 	users := []User{}
 	for rows.Next() {
 		var u User
-		if err = rows.Scan(&u.ID, &u.Email, &u.DisplayName, &u.Active, &u.CreatedAt, &u.Role); err != nil {
+		if err = rows.Scan(&u.ID, &u.Email, &u.DisplayName, &u.Active, &u.CreatedAt, &u.Role, &u.StorageBytes); err != nil {
 			return nil, err
 		}
 		users = append(users, u)

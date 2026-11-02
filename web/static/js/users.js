@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded",async()=>{
   let Swal;try{Swal=await loadSweetAlert()}catch(error){console.error(error);return}
   const csrf=document.querySelector('meta[name="csrf-token"]')?.content||"";
   const rows=()=>[...document.querySelectorAll("[data-user-row]")];
+  const tableHead=document.querySelector(".users-table-head");
+  if(tableHead){const label=document.createElement("span");label.textContent="Drive Saya";tableHead.insertBefore(label,tableHead.children[3])}
+  document.querySelectorAll("[data-storage-user]").forEach(item=>{const row=document.querySelector(`[data-user-row][data-user-id="${item.dataset.storageUser}"]`);if(!row)return;const usage=document.createElement("span");usage.className="user-storage";usage.textContent=item.dataset.storageValue;usage.title="Pemakaian penyimpanan Drive Saya";row.insertBefore(usage,row.querySelector("time"))});
   const post=async(url,body)=>{const response=await fetch(url,{method:"POST",headers:{"X-CSRF-Token":csrf},body});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||"Operasi gagal");return data};
   const error=message=>Swal.fire({icon:"error",title:"Operasi gagal",text:message,confirmButtonColor:"#7c3aed"});
   const refresh=()=>location.reload();
