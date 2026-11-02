@@ -54,6 +54,13 @@ func (s *Service) Browse(ctx context.Context, userID uuid.UUID, parentID *uuid.U
 	page.Nodes, err = s.repo.List(ctx, d.ID, parentID, strings.TrimSpace(q), sort)
 	return page, err
 }
+func (s *Service) Usage(ctx context.Context, userID uuid.UUID) (int64, error) {
+	drive, err := s.repo.PersonalDrive(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	return s.repo.Usage(ctx, drive.ID)
+}
 func (s *Service) CreateFolder(ctx context.Context, userID uuid.UUID, parentID *uuid.UUID, name string) error {
 	name = safeName(name)
 	if name == "" {

@@ -42,6 +42,11 @@ func (r *Repository) ManagerNode(ctx context.Context, driveID, nodeID uuid.UUID)
 	}
 	return n, err
 }
+func (r *Repository) ManagerUsage(ctx context.Context, driveID uuid.UUID) (int64, error) {
+	var bytes int64
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(n.size_bytes),0) FROM drive_nodes n JOIN storage_objects o ON o.id=n.storage_object_id AND o.state='ready' WHERE n.drive_id=? AND n.type='file'`, driveID.String()).Scan(&bytes)
+	return bytes, err
+}
 func (r *Repository) CreateManagerFolder(ctx context.Context, driveID, userID uuid.UUID, parent *uuid.UUID, name string) error {
 	var p any
 	if parent != nil {
@@ -141,6 +146,13 @@ func (s *ManagerService) Browse(ctx context.Context, userID uuid.UUID, parent *u
 	}
 	page.Nodes, err = s.repo.List(ctx, d.Organization.ID, parent, q, "", sort)
 	return page, err
+}
+func (s *ManagerService) Usage(ctx context.Context, userID uuid.UUID) (int64, error) {
+	drive, err := s.repo.ManagedDrive(ctx, userID, s.slug)
+	if err != nil {
+		return 0, err
+	}
+	return s.repo.ManagerUsage(ctx, drive.ID)
 }
 func (s *ManagerService) CreateFolder(ctx context.Context, userID uuid.UUID, parent *uuid.UUID, name string) error {
 	name = managerSafeName(name)
@@ -264,6 +276,14 @@ func (h *ManagerHandler) Index(c *gin.Context) {
 		templateName = "public-drive-manager.html"
 	}
 	c.HTML(http.StatusOK, templateName, gin.H{"Title": "Drive Publik", "Session": session, "Page": page, "Query": c.Query("q"), "Sort": c.Query("sort"), "MaxUpload": h.maxUpload})
+}
+func (h *ManagerHandler) Usage(c *gin.Context) {
+	bytes, err := h.service.Usage(c.Request.Context(), managerSession(c).UserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "pemakaian Drive Publik tidak tersedia"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"bytes": bytes})
 }
 func (h *ManagerHandler) CreateFolder(c *gin.Context) {
 	session := managerSession(c)

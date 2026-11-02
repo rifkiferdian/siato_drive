@@ -42,3 +42,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     body.appendChild(content);dialog.showModal()
   }))
 });
+
+async function loadDriveUsage(url,label){
+  const heading=document.querySelector(".drive-page-head");if(!heading||heading.querySelector(".public-storage-usage"))return;
+  try{const response=await fetch(url,{headers:{Accept:"application/json"}});if(!response.ok)return;const data=await response.json();const usage=document.createElement("div");usage.className="public-storage-usage";usage.innerHTML=`<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C7.58 3 4 4.34 4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6c0-1.66-3.58-3-8-3Zm0 2c3.87 0 6 .99 6 1s-2.13 1-6 1-6-.99-6-1 2.13-1 6-1Zm0 14c-3.87 0-6-.99-6-1v-2.1c1.47.7 3.58 1.1 6 1.1s4.53-.4 6-1.1V18c0 .01-2.13 1-6 1Zm0-4c-3.87 0-6-.99-6-1v-2.1c1.47.7 3.58 1.1 6 1.1s4.53-.4 6-1.1V14c0 .01-2.13 1-6 1Zm0-4c-3.87 0-6-.99-6-1V7.9C7.47 8.6 9.58 9 12 9s4.53-.4 6-1.1V10c0 .01-2.13 1-6 1Z"/></svg></span><div><small>${label}</small><strong>${(Number(data.bytes||0)/1073741824).toFixed(3)} GB</strong></div>`;const actions=heading.querySelector(".drive-actions");if(actions)actions.prepend(usage);else heading.appendChild(usage)}catch(error){console.error(`${label} gagal dimuat`,error)}
+}

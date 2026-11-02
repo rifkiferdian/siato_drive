@@ -21,6 +21,11 @@ func (r *Repository) PersonalDrive(ctx context.Context, userID uuid.UUID) (Drive
 	}
 	return d, err
 }
+func (r *Repository) Usage(ctx context.Context, driveID uuid.UUID) (int64, error) {
+	var bytes int64
+	err := r.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(n.size_bytes),0) FROM drive_nodes n JOIN storage_objects o ON o.id=n.storage_object_id AND o.state='ready' WHERE n.drive_id=? AND n.type='file'`, driveID.String()).Scan(&bytes)
+	return bytes, err
+}
 func (r *Repository) Node(ctx context.Context, driveID, nodeID uuid.UUID) (Node, error) {
 	var n Node
 	var parent sql.NullString

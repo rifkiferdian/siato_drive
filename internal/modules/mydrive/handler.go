@@ -35,6 +35,14 @@ func (h *Handler) Index(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "my-drive.html", gin.H{"Title": "Drive Saya", "Session": session, "Page": page, "Query": c.Query("q"), "Sort": c.Query("sort"), "MaxUpload": h.maxUpload})
 }
+func (h *Handler) Usage(c *gin.Context) {
+	bytes, err := h.service.Usage(c.Request.Context(), currentSession(c).UserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "pemakaian Drive Saya tidak tersedia"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"bytes": bytes})
+}
 func (h *Handler) CreateFolder(c *gin.Context) {
 	session := currentSession(c)
 	parent, ok := optionalUUID(c.PostForm("parent_id"))

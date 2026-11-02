@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   let Swal;
   try { Swal = await loadSweetAlert(); } catch (error) { console.error(error); return; }
+  await loadDriveUsage("/api/v1/shared-drive/usage", "Penyimpanan Drive Bersama");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
   const parent = new URLSearchParams(location.search).get("folder") || "";
   setupDriveView(Swal);

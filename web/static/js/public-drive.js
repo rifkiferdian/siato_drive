@@ -13,6 +13,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     publicLink.innerHTML = `<span class="public-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.92 6h-2.95a15.7 15.7 0 0 0-1.38-3.56A8.06 8.06 0 0 1 18.92 8ZM12 4c.83 1.2 1.48 2.55 1.85 4h-3.7A13.7 13.7 0 0 1 12 4ZM4.26 14a7.8 7.8 0 0 1 0-4h3.39a16.5 16.5 0 0 0 0 4H4.26Zm5.5 0a14.4 14.4 0 0 1 0-4h4.48a14.4 14.4 0 0 1 0 4H9.76ZM12 20a13.7 13.7 0 0 1-1.85-4h3.7A13.7 13.7 0 0 1 12 20Zm4.35-6a16.5 16.5 0 0 0 0-4h3.39a7.8 7.8 0 0 1 0 4h-3.39Z"/></svg></span><span>Buka Portal Publik</span><svg class="public-link-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3Z"/></svg>`;
     driveActions.prepend(publicLink);
   }
+  const driveHeading = document.querySelector(".drive-page-head");
+  if (driveHeading) {
+    try {
+      const response = await fetch("/api/v1/public-drive/usage", { headers: { Accept: "application/json" } });
+      if (response.ok) {
+        const data = await response.json();
+        const usage = document.createElement("div");
+        usage.className = "public-storage-usage";
+        usage.innerHTML = `<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C7.58 3 4 4.34 4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6c0-1.66-3.58-3-8-3Zm0 2c3.87 0 6 .99 6 1s-2.13 1-6 1-6-.99-6-1 2.13-1 6-1Zm0 14c-3.87 0-6-.99-6-1v-2.1c1.47.7 3.58 1.1 6 1.1s4.53-.4 6-1.1V18c0 .01-2.13 1-6 1Zm0-4c-3.87 0-6-.99-6-1v-2.1c1.47.7 3.58 1.1 6 1.1s4.53-.4 6-1.1V14c0 .01-2.13 1-6 1Zm0-4c-3.87 0-6-.99-6-1V7.9C7.47 8.6 9.58 9 12 9s4.53-.4 6-1.1V10c0 .01-2.13 1-6 1Z"/></svg></span><div><small>Penyimpanan Drive Publik</small><strong>${(Number(data.bytes || 0) / 1073741824).toFixed(3)} GB</strong></div>`;
+        const actions = driveHeading.querySelector(".drive-actions");
+        if (actions) actions.prepend(usage); else driveHeading.appendChild(usage);
+      }
+    } catch (error) { console.error("Pemakaian Drive Publik gagal dimuat", error); }
+  }
   let Swal;
   try { Swal = await loadSweetAlert(); } catch (error) { console.error(error); return; }
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
